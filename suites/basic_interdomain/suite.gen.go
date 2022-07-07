@@ -46,6 +46,7 @@ func (s *Suite) TestNsm_consul() {
 	r.Run(`kubectl --kubeconfig=$KUBECONFIG2 apply -f service.yaml`)
 	r.Run(`kubectl --kubeconfig=$KUBECONFIG2 apply -k nse-auto-scale`)
 	r.Run(`kubectl --kubeconfig=$KUBECONFIG2 apply -f server/counting.yaml`)
+	r.Run(`kubectl --kubeconfig=$KUBECONFIG1 wait --timeout=5m --for=condition=ready pod -l app=dashboard`)
 	r.Run(`kubectl --kubeconfig=$KUBECONFIG1 exec -it dashboard -- apk add curl`)
 	r.Run(`kubectl --kubeconfig=$KUBECONFIG1 exec -it dashboard -- curl counting:9001`)
 	r.Run(`kubectl --kubeconfig=$KUBECONFIG1 port-forward dashboard 9002:9002`)
@@ -64,6 +65,7 @@ func (s *Suite) TestNsm_istio() {
 	r.Run(`kubectl --kubeconfig=$KUBECONFIG1 apply -f productpage/productpage.yaml`)
 	r.Run(`kubectl --kubeconfig=$KUBECONFIG2 apply -k nse-auto-scale`)
 	r.Run(`kubectl --kubeconfig=$KUBECONFIG2 label namespace default istio-injection=enabled` + "\n" + `` + "\n" + `kubectl --kubeconfig=$KUBECONFIG2 apply -f https://raw.githubusercontent.com/istio/istio/release-1.13/samples/bookinfo/platform/kube/bookinfo.yaml`)
+	r.Run(`kubectl --kubeconfig=$KUBECONFIG1 wait --timeout=5m --for=condition=ready pod -l app=deploy/productpage-v1`)
 	r.Run(`kubectl --kubeconfig=$KUBECONFIG1 exec deploy/productpage-v1 -c cmd-nsc -- apk add curl`)
 	r.Run(`kubectl --kubeconfig=$KUBECONFIG1 exec deploy/productpage-v1 -c cmd-nsc -- curl -s productpage.default:9080/productpage | grep -o "<title>Simple Bookstore App</title>"`)
 }
