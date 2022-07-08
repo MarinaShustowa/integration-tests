@@ -33,7 +33,7 @@ func (s *Suite) SetupSuite() {
 func (s *Suite) TestNsm_consul() {
 	r := s.Runner("../deployments-k8s/examples/nsm_consul")
 	s.T().Cleanup(func() {
-		r.Run(`kubectl --kubeconfig=$KUBECONFIG2 delete deployment counting`)
+		r.Run(`kubectl --kubeconfig=$KUBECONFIG1 delete deployment counting`)
 		r.Run(`kubectl --kubeconfig=$KUBECONFIG2 delete -k nse-auto-scale`)
 		r.Run(`kubectl --kubeconfig=$KUBECONFIG1 delete -f client/dashboard.yaml`)
 		r.Run(`kubectl --kubeconfig=$KUBECONFIG2 delete -f networkservice.yaml`)
