@@ -37,6 +37,7 @@ func (s *Suite) TestNsm_consul() {
 		r.Run(`kubectl --kubeconfig=$KUBECONFIG2 delete -k nse-auto-scale`)
 		r.Run(`kubectl --kubeconfig=$KUBECONFIG1 delete -f client/dashboard.yaml`)
 		r.Run(`kubectl --kubeconfig=$KUBECONFIG2 delete -f networkservice.yaml`)
+		r.Run(`kubectl --kubeconfig=$KUBECONFIG2 delete pods --all`)
 		r.Run(`consul-k8s uninstall --kubeconfig=$KUBECONFIG2 -auto-approve=true -wipe-data=true`)
 	})
 	r.Run(`brew tap hashicorp/tap` + "\n" + `brew install hashicorp/tap/consul-k8s`)
