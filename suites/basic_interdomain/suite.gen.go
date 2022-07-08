@@ -47,12 +47,11 @@ func (s *Suite) TestNsm_consul() {
 	r.Run(`kubectl --kubeconfig=$KUBECONFIG2 apply -k nse-auto-scale`)
 	r.Run(`kubectl --kubeconfig=$KUBECONFIG2 apply -f server/counting.yaml`)
 	r.Run(`kubectl --kubeconfig=$KUBECONFIG1 wait --timeout=5m --for=condition=ready pod -l app=dashboard-nsc`)
-	r.Run(`kubectl --kubeconfig=$KUBECONFIG1 exec -it dashboard-nsc -c cmd-nsc -- apk add curl`)
-	r.Run(`kubectl --kubeconfig=$KUBECONFIG1 exec -it dashboard-nsc -c cmd-nsc -- curl counting:9001`)
-	r.Run(`kubectl --kubeconfig=$KUBECONFIG1 port-forward dashboard-nsc 9002:9002 &`)
+	r.Run(`kubectl --kubeconfig=$KUBECONFIG1 exec -it pod/dashboard-nsc -c cmd-nsc -- apk add curl`)
+	r.Run(`kubectl --kubeconfig=$KUBECONFIG1 exec -it pod/dashboard-nsc -c cmd-nsc -- curl counting:9001`)
+	r.Run(`kubectl --kubeconfig=$KUBECONFIG1 port-forward pod/dashboard-nsc 9002:9002 &`)
 	r.Run(`kubectl --kubeconfig=$KUBECONFIG2 delete deploy counting`)
 	r.Run(`kubectl --kubeconfig=$KUBECONFIG1 apply -f server/counting_nsm.yaml`)
-	r.Run(`kubectl --kubeconfig=$KUBECONFIG2 port-forward dashboard-nsc 9002:9002`)
 }
 func (s *Suite) TestNsm_istio() {
 	r := s.Runner("../deployments-k8s/examples/nsm_istio")
