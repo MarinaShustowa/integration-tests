@@ -30,30 +30,6 @@ func (s *Suite) SetupSuite() {
 		}
 	}
 }
-func (s *Suite) TestNsm_consul() {
-	r := s.Runner("../deployments-k8s/examples/nsm_consul")
-	s.T().Cleanup(func() {
-		r.Run(`kubectl --kubeconfig=$KUBECONFIG1 delete deployment counting`)
-		r.Run(`kubectl --kubeconfig=$KUBECONFIG2 delete -k nse-auto-scale`)
-		r.Run(`kubectl --kubeconfig=$KUBECONFIG1 delete -f client/dashboard.yaml`)
-		r.Run(`kubectl --kubeconfig=$KUBECONFIG2 delete -f networkservice.yaml`)
-		r.Run(`kubectl --kubeconfig=$KUBECONFIG2 delete pods --all`)
-		r.Run(`consul-k8s uninstall --kubeconfig=$KUBECONFIG2 -auto-approve=true -wipe-data=true`)
-	})
-	r.Run(`brew tap hashicorp/tap` + "\n" + `brew install hashicorp/tap/consul-k8s`)
-	r.Run(`consul-k8s install -config-file=helm-consul-values.yaml -set global.image=hashicorp/consul:1.12.0 -auto-approve --kubeconfig=$KUBECONFIG2`)
-	r.Run(`kubectl --kubeconfig=$KUBECONFIG2 apply -f networkservice.yaml`)
-	r.Run(`kubectl --kubeconfig=$KUBECONFIG1 apply -f client/dashboard.yaml`)
-	r.Run(`kubectl --kubeconfig=$KUBECONFIG2 apply -f service.yaml`)
-	r.Run(`kubectl --kubeconfig=$KUBECONFIG2 apply -k nse-auto-scale`)
-	r.Run(`kubectl --kubeconfig=$KUBECONFIG2 apply -f server/counting.yaml`)
-	r.Run(`kubectl --kubeconfig=$KUBECONFIG1 wait --timeout=5m --for=condition=ready pod -l app=dashboard-nsc`)
-	r.Run(`kubectl --kubeconfig=$KUBECONFIG1 exec pod/dashboard-nsc -c cmd-nsc -- apk add curl`)
-	r.Run(`kubectl --kubeconfig=$KUBECONFIG1 exec pod/dashboard-nsc -c cmd-nsc -- curl counting:9001`)
-	r.Run(`kubectl --kubeconfig=$KUBECONFIG1 port-forward pod/dashboard-nsc 9002:9002 &`)
-	r.Run(`kubectl --kubeconfig=$KUBECONFIG2 delete deploy counting`)
-	r.Run(`kubectl --kubeconfig=$KUBECONFIG1 apply -f server/counting_nsm.yaml`)
-}
 func (s *Suite) TestNsm_istio() {
 	r := s.Runner("../deployments-k8s/examples/nsm_istio")
 	s.T().Cleanup(func() {
@@ -68,7 +44,7 @@ func (s *Suite) TestNsm_istio() {
 	r.Run(`kubectl --kubeconfig=$KUBECONFIG1 top nodes`)
 	r.Run(`kubectl --kubeconfig=$KUBECONFIG2 top pods -A`)
 	r.Run(`kubectl --kubeconfig=$KUBECONFIG2 top nodes`)
-	r.Run(`kubectl --kubeconfig=$KUBECONFIG1 wait --timeout=5m --for=condition=ready pod -l app=productpage`)
+	r.Run(`kubectl --kubeconfig=$KUBECONFIG1 wait --timeout=2m --for=condition=ready pod -l app=productpage`)
 	r.Run(`kubectl --kubeconfig=$KUBECONFIG1 exec deploy/productpage-v1 -c cmd-nsc -- apk add curl`)
 	r.Run(`kubectl --kubeconfig=$KUBECONFIG1 exec deploy/productpage-v1 -c cmd-nsc -- curl -s productpage.default:9080/productpage | grep -o "<title>Simple Bookstore App</title>"`)
 }
