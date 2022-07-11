@@ -33,6 +33,8 @@ func (s *Suite) SetupSuite() {
 func (s *Suite) TestNsm_istio() {
 	r := s.Runner("../deployments-k8s/examples/nsm_istio")
 	s.T().Cleanup(func() {
+		r.Run(`kubectl --kubeconfig=$KUBECONFIG1 get pods -A`)
+		r.Run(`kubectl --kubeconfig=$KUBECONFIG1 logs deploy/productpage-v1 -c cmd-nsc-init`)
 		r.Run(`kubectl --kubeconfig=$KUBECONFIG2 delete -f https://raw.githubusercontent.com/istio/istio/release-1.13/samples/bookinfo/platform/kube/bookinfo.yaml` + "\n" + `kubectl --kubeconfig=$KUBECONFIG2 delete -k nse-auto-scale ` + "\n" + `kubectl --kubeconfig=$KUBECONFIG1 delete -f productpage/productpage.yaml` + "\n" + `kubectl --kubeconfig=$KUBECONFIG2 delete -f networkservice.yaml` + "\n" + `kubectl --kubeconfig=$KUBECONFIG2 delete ns istio-system` + "\n" + `kubectl --kubeconfig=$KUBECONFIG2 label namespace default istio-injection-` + "\n" + `kubectl --kubeconfig=$KUBECONFIG2 delete pods --all`)
 	})
 	r.Run(`curl -sL https://istio.io/downloadIstioctl | sh -` + "\n" + `export PATH=$PATH:$HOME/.istioctl/bin` + "\n" + `istioctl  install --set profile=minimal -y --kubeconfig=$KUBECONFIG2` + "\n" + `istioctl --kubeconfig=$KUBECONFIG2 proxy-status`)
