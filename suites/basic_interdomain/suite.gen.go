@@ -31,7 +31,7 @@ func (s *Suite) SetupSuite() {
 	}
 }
 func (s *Suite) TestNsm_consul() {
-	r := s.Runner("../deployments-k8s/examples/nsm_consul")
+	r := s.Runner("../deployments-k8s/examples/basic_interdomain/nsm_consul")
 	s.T().Cleanup(func() {
 		r.Run(`kubectl --kubeconfig=$KUBECONFIG1 delete deployment counting`)
 		r.Run(`kubectl --kubeconfig=$KUBECONFIG2 delete -k nse-auto-scale`)
@@ -55,7 +55,21 @@ func (s *Suite) TestNsm_consul() {
 	r.Run(`kubectl --kubeconfig=$KUBECONFIG1 apply -f server/counting_nsm.yaml`)
 }
 func (s *Suite) TestNsm_istio() {
-	r := s.Runner("../deployments-k8s/examples/nsm_istio")
+	r := s.Runner("../deployments-k8s/examples/basic_interdomain/nsm_istio")
+	s.T().Cleanup(func() {
+		r.Run(`kubectl --kubeconfig=$KUBECONFIG2 delete -f https://raw.githubusercontent.com/istio/istio/release-1.13/samples/bookinfo/platform/kube/bookinfo.yaml` + "\n" + `kubectl --kubeconfig=$KUBECONFIG2 delete -k nse-auto-scale ` + "\n" + `kubectl --kubeconfig=$KUBECONFIG1 delete -f productpage/productpage.yaml` + "\n" + `kubectl --kubeconfig=$KUBECONFIG2 delete -f networkservice.yaml` + "\n" + `kubectl --kubeconfig=$KUBECONFIG2 delete ns istio-system` + "\n" + `kubectl --kubeconfig=$KUBECONFIG2 label namespace default istio-injection-` + "\n" + `kubectl --kubeconfig=$KUBECONFIG2 delete pods --all`)
+	})
+	r.Run(`curl -sL https://istio.io/downloadIstioctl | sh -` + "\n" + `export PATH=$PATH:$HOME/.istioctl/bin` + "\n" + `istioctl  install --set profile=minimal -y --kubeconfig=$KUBECONFIG2` + "\n" + `istioctl --kubeconfig=$KUBECONFIG2 proxy-status`)
+	r.Run(`kubectl --kubeconfig=$KUBECONFIG2 apply -f networkservice.yaml`)
+	r.Run(`kubectl --kubeconfig=$KUBECONFIG1 apply -f productpage/productpage.yaml`)
+	r.Run(`kubectl --kubeconfig=$KUBECONFIG2 apply -k nse-auto-scale`)
+	r.Run(`kubectl --kubeconfig=$KUBECONFIG2 label namespace default istio-injection=enabled` + "\n" + `` + "\n" + `kubectl --kubeconfig=$KUBECONFIG2 apply -f productpage/productpage_ci.yaml`)
+	r.Run(`kubectl --kubeconfig=$KUBECONFIG1 wait --timeout=2m --for=condition=ready pod -l app=productpage`)
+	r.Run(`kubectl --kubeconfig=$KUBECONFIG1 exec deploy/productpage-v1 -c cmd-nsc -- apk add curl`)
+	r.Run(`kubectl --kubeconfig=$KUBECONFIG1 exec deploy/productpage-v1 -c cmd-nsc -- curl -s productpage.default:9080/productpage`)
+}
+func (s *Suite) TestNsm_istio_booking() {
+	r := s.Runner("../deployments-k8s/examples/basic_interdomain/nsm_istio_booking")
 	s.T().Cleanup(func() {
 		r.Run(`kubectl --kubeconfig=$KUBECONFIG2 delete -f https://raw.githubusercontent.com/istio/istio/release-1.13/samples/bookinfo/platform/kube/bookinfo.yaml` + "\n" + `kubectl --kubeconfig=$KUBECONFIG2 delete -k nse-auto-scale ` + "\n" + `kubectl --kubeconfig=$KUBECONFIG1 delete -f productpage/productpage.yaml` + "\n" + `kubectl --kubeconfig=$KUBECONFIG2 delete -f networkservice.yaml` + "\n" + `kubectl --kubeconfig=$KUBECONFIG2 delete ns istio-system` + "\n" + `kubectl --kubeconfig=$KUBECONFIG2 label namespace default istio-injection-` + "\n" + `kubectl --kubeconfig=$KUBECONFIG2 delete pods --all`)
 	})
@@ -67,25 +81,4 @@ func (s *Suite) TestNsm_istio() {
 	r.Run(`kubectl --kubeconfig=$KUBECONFIG1 wait --timeout=2m --for=condition=ready pod -l app=productpage`)
 	r.Run(`kubectl --kubeconfig=$KUBECONFIG1 exec deploy/productpage-v1 -c cmd-nsc -- apk add curl`)
 	r.Run(`kubectl --kubeconfig=$KUBECONFIG1 exec deploy/productpage-v1 -c cmd-nsc -- curl -s productpage.default:9080/productpage | grep -o "<title>Simple Bookstore App</title>"`)
-}
-func (s *Suite) TestNsm_istio_ci() {
-	r := s.Runner("../deployments-k8s/examples/nsm_istio_ci")
-	s.T().Cleanup(func() {
-		r.Run(`kubectl --kubeconfig=$KUBECONFIG1 get pods -A`)
-		r.Run(`kubectl --kubeconfig=$KUBECONFIG2 get pods -A`)
-		r.Run(`kubectl --kubeconfig=$KUBECONFIG1 logs deploy/productpage-v1 -c cmd-nsc-init`)
-		r.Run(`NSE=$(kubectl get pods -l app=productpage,spiffe.io/spiffe-id=true --template '{{range .items}}{{.metadata.name}}{{"\n"}}{{end}}')`)
-		r.Run(`kubectl --kubeconfig=$KUBECONFIG2 logs $NSE -c nse`)
-		r.Run(`kubectl --kubeconfig=$KUBECONFIG2 logs -l app=nse-supplier-k8s`)
-		r.Run(`kubectl --kubeconfig=$KUBECONFIG2 describe pods`)
-		r.Run(`kubectl --kubeconfig=$KUBECONFIG2 delete -f https://raw.githubusercontent.com/istio/istio/release-1.13/samples/bookinfo/platform/kube/bookinfo.yaml` + "\n" + `kubectl --kubeconfig=$KUBECONFIG2 delete -k nse-auto-scale ` + "\n" + `kubectl --kubeconfig=$KUBECONFIG1 delete -f productpage/productpage.yaml` + "\n" + `kubectl --kubeconfig=$KUBECONFIG2 delete -f networkservice.yaml` + "\n" + `kubectl --kubeconfig=$KUBECONFIG2 delete ns istio-system` + "\n" + `kubectl --kubeconfig=$KUBECONFIG2 label namespace default istio-injection-` + "\n" + `kubectl --kubeconfig=$KUBECONFIG2 delete pods --all`)
-	})
-	r.Run(`curl -sL https://istio.io/downloadIstioctl | sh -` + "\n" + `export PATH=$PATH:$HOME/.istioctl/bin` + "\n" + `istioctl  install --set profile=minimal -y --kubeconfig=$KUBECONFIG2` + "\n" + `istioctl --kubeconfig=$KUBECONFIG2 proxy-status`)
-	r.Run(`kubectl --kubeconfig=$KUBECONFIG2 apply -f networkservice.yaml`)
-	r.Run(`kubectl --kubeconfig=$KUBECONFIG1 apply -f productpage/productpage.yaml`)
-	r.Run(`kubectl --kubeconfig=$KUBECONFIG2 apply -k nse-auto-scale`)
-	r.Run(`kubectl --kubeconfig=$KUBECONFIG2 label namespace default istio-injection=enabled` + "\n" + `` + "\n" + `kubectl --kubeconfig=$KUBECONFIG2 apply -f productpage/productpage_ci.yaml`)
-	r.Run(`kubectl --kubeconfig=$KUBECONFIG1 wait --timeout=2m --for=condition=ready pod -l app=productpage`)
-	r.Run(`kubectl --kubeconfig=$KUBECONFIG1 exec deploy/productpage-v1 -c cmd-nsc -- apk add curl`)
-	r.Run(`kubectl --kubeconfig=$KUBECONFIG1 exec deploy/productpage-v1 -c cmd-nsc -- curl -s productpage.default:9080/productpage`)
 }
