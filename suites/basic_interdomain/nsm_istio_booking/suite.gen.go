@@ -5,10 +5,10 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/networkservicemesh/integration-tests/extensions/base"
-	"github.com/networkservicemesh/integration-tests/suites/interdomain/dns"
-	"github.com/networkservicemesh/integration-tests/suites/interdomain/loadbalancer"
-	"github.com/networkservicemesh/integration-tests/suites/interdomain/nsm"
-	"github.com/networkservicemesh/integration-tests/suites/interdomain/spire"
+	"github.com/networkservicemesh/integration-tests/suites/basic_interdomain/dns"
+	"github.com/networkservicemesh/integration-tests/suites/basic_interdomain/loadbalancer"
+	"github.com/networkservicemesh/integration-tests/suites/basic_interdomain/nsm"
+	"github.com/networkservicemesh/integration-tests/suites/basic_interdomain/spire"
 )
 
 type Suite struct {
@@ -29,7 +29,7 @@ func (s *Suite) SetupSuite() {
 			v.SetupSuite()
 		}
 	}
-	r := s.Runner("../deployments-k8s/examples/interdomain/nsm_istio_booking")
+	r := s.Runner("../deployments-k8s/examples/basic_interdomain/nsm_istio_booking")
 	s.T().Cleanup(func() {
 		r.Run(`kubectl --kubeconfig=$KUBECONFIG2 delete -f https://raw.githubusercontent.com/istio/istio/release-1.13/samples/bookinfo/platform/kube/bookinfo.yaml` + "\n" + `kubectl --kubeconfig=$KUBECONFIG2 delete -k nse-auto-scale ` + "\n" + `kubectl --kubeconfig=$KUBECONFIG1 delete -f productpage/productpage.yaml` + "\n" + `kubectl --kubeconfig=$KUBECONFIG2 delete -f networkservice.yaml` + "\n" + `kubectl --kubeconfig=$KUBECONFIG2 delete ns istio-system` + "\n" + `kubectl --kubeconfig=$KUBECONFIG2 label namespace default istio-injection-` + "\n" + `kubectl --kubeconfig=$KUBECONFIG2 delete pods --all`)
 	})
